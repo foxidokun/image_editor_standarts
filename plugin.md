@@ -35,7 +35,7 @@ struct App {
     FilterManagerI *filter_manager; 
 }
 
-struct Guii {
+struct GuiI {
     Vec2 getSize(); // размер доступной для рисования площади (которую можно запросить)
 
     /// @brief запросить RT.
@@ -60,14 +60,22 @@ struct EventManagerI {
 }
 
 struct EventProcessableI {
-    virtual bool onMouseMove(MouseContext context) = 0; // контекст имеет относительную  
-    virtual bool onMouseRelease(MouseContext context) = 0; // контекст имеет относительную  
-    virtual bool onMousePress(MouseContext context) = 0; // контекст имеет относительную  
-    virtual bool onKeyboardPress(KeyboardContext context) = 0; // контекст имеет относительную  
-    virtual bool onKeyboardRelease(KeyboardContext context) = 0; // контекст имеет относительную  
-    virtual bool onClock( context) = 0; // контекст имеет относительную  
+    // MouseContext хранит в себе координаты относительно позиции RT из GuiI::getRenderTarget.
+    // Мотивация: если RT это не весь экран, а RT в каком-то окне (как идейно и планировалось), то, 
+    // строго говоря, плагин не знает где в реальном мире находится RT (его могли перетаскивать и проч)
+    // и не может пересчитать их в локальные.
+    
+    /// @warning aka proposal: тогда вызов этих функций без предварительного вызова getRenderTarget UB.
+
+    virtual bool onMouseMove(MouseContext context) = 0;
+    virtual bool onMouseRelease(MouseContext context) = 0;
+    virtual bool onMousePress(MouseContext context) = 0;
+    virtual bool onKeyboardPress(KeyboardContext context) = 0;
+    virtual bool onKeyboardRelease(KeyboardContext context) = 0;
+    virtual bool onClock(... context) = 0;
 }
 
+/// @note см про относительность координат
 struct MouseContext {
     Vec2 position;
     MouseButton button;
