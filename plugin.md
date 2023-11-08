@@ -1,6 +1,6 @@
 # Идейно общий хедер
 
-Он будет переписан на честный C++ при завершении обсуждения... Обязательно
+Он будет оформлен в виде полноценного хедера при завершении обсуждения... Обязательно
 
 ```c++
 // plugin.h
@@ -46,15 +46,15 @@ struct GuiI {
     Vec2 getSize(); // размер доступной для рисования площади (которую можно запросить)
 
     /// @brief запросить RT.
-    /// Идейно создает новое свое окно / отдает какое-то, абсолютно пустое, с единственным RT на все окно.
+    /// Идейно хост создает новое окно / отдает какое-то, абсолютно пустое, с единственным RT на все окно.
     /// @param size -- размер запрашиваемой области
-    /// @param pos  -- (относительное) смещение запрашиваемой области
+    /// @param pos  -- (относительное [относительно предоставленной области]) смещение запрашиваемой области
     virtual RenderTarget* getRenderTarget(Vec2 size, Vec2 pos, PLugin *self) = 0;
 
     /// @brief Создает окно с параметрами, каким-то образом узнает у пользователя 
     ///     значения параметров и потом возвращает их интерфейсу через Interface::set_params
     /// @note окно не обязательно модальное, да и вообще implementation defined. Мем в том, что плагин находится в 
-    ///     неопределенном/дефолтном состоянии между createParamWindow и Interface::set_parans
+    ///     неопределенном/дефолтном состоянии между createParamWindow и Interface::set_params и взаимодействие с ним UB
     virtual void createParamWindow(Array<const char *> param_names, Interface * self) = 0;
 }
 
@@ -62,6 +62,7 @@ struct EventManagerI {
     virtual void registerObject(EventProcessableI *object)   = 0;
 
     // 0 минимальный, ивенты приходят только объектам с их priority >= установленной по этому типу
+    /// @warning aka proposal: надо бы +- договориться о стандартных приоритетах, чтобы было понятно что выставлять
     virtual void setPriority(EventType, uint8_t priority)   = 0;
     virtual void unregisterObject(EventProcessableI *object) = 0;
 }
