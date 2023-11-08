@@ -8,7 +8,10 @@ enum class InterfaceType {
     Filter
 };
 
-struct Interface {};
+
+struct Interface {
+    /* TODO: установка параметров */
+};
 
 struct Plugin {
     /* где-то тут лежит App*, но это дело автора плагина */
@@ -96,5 +99,6 @@ struct KeyboardContext {
 
 ```
 
+# Аксиоматика интерфейсов
 0. Автор основной программы не долбоеб
 1. В одном файле не более одного типа интерфейса. Либо Tool, либо Filter
