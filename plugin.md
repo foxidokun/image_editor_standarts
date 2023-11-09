@@ -109,3 +109,36 @@ struct KeyboardContext {
 # Аксиоматика интерфейсов
 0. Авторы хост-программы и плагина не долбоебы
 1. В одном файле не более одного типа интерфейса. Либо Tool, либо Filter
+
+# RFC 228
+
+Стандартизация `WidgetI`
+
+```c++
+struct WidgetI: public EventProcessableI {
+    virtual void register_object(WidgetI* object);
+    virtual void unregister_object(WidgetI* object);
+
+    WidgetI(Vec2 pos, Vec2 size);
+
+//  --- мб поля
+    virtual Vec2 pos();
+    virtual void pos(Vec2);
+
+    virtual Vec2 size();
+    virtual void size(Vec2);
+
+    virtual bool is_extern();
+
+    virtual void set_parent(WidgetI *root);
+    virtual WidgetI *get_parent();
+// -----
+
+    virtual void move(Vec2 shift);
+    bool (get/set)is_alive(); // закрыто ли
+    virtual void render(...);
+    virtual void recalc_region();
+
+    virtual ~WidgetI();
+}
+```
