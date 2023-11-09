@@ -5,6 +5,8 @@
 ```c++
 // plugin.h
 
+/// @warning Все, кроме getInstance, было бы неплохо обернуть в namespace 
+
 extern "C" Plugin* getInstance(App *);
 
 enum class InterfaceType {
