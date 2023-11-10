@@ -1,16 +1,37 @@
-# Идейно общий хедер
-
-Он будет оформлен в виде полноценного хедера при завершении обсуждения... Обязательно
-
-```c++
-// plugin.h
-
-extern "C" Plugin* getInstance(App *);
+#include <cinttypes>
 
 namespace plugin {
     enum class InterfaceType {
         Tool,
         Filter
+    };
+
+    template<class T>
+    struct Array {
+        uint64_t size;
+        T* data;
+    };
+
+    struct RenderTargetI {
+        /**
+         * point -- левый верхний угол
+         * size  -- размер ограничивающего прямоугольника
+         * */
+
+        virtual void setPixel(Vec2 pos, Color color);
+        virtual void drawLine(Vec2 pos, Vec2 point1, Color color);
+        virtual void drawRect(Vec2 pos, Vec2 size, Color color);
+        virtual void drawEllipse(Vec2 pos, Vec2 size, Color color);
+        virtual void drawTexture(Vec2 pos, Vec2 size, const Texture *texture);
+        virtual void drawText(Vec2 pos, const char *content, uint16_t char_size, Color color);
+
+        virtual Texture *getTexture();
+
+        /// как в RenderTexture::display
+        virtual void display();
+
+        /// clear
+        virtual void clear();
     };
 
     struct Interface {
@@ -24,19 +45,19 @@ namespace plugin {
     struct Plugin {
         /* где-то тут лежит App*, но это дело автора плагина */
         uint64_t id;
-        const char[] name;
+        const char *name;
         InterfaceType type;
 
         virtual Interface *getInstance() = 0;
         virtual ~Plugin() = 0;
-    }
+    };
 
     struct App {
         GuiI *root;
         EventManagerI *event_manager; 
         ToolManagerI *tool_manager;
         FilterManagerI *filter_manager; 
-    }
+    };
 
     struct GuiI {
         Vec2 getSize(); // размер доступной для рисования площади (которую можно запросить)
@@ -45,7 +66,7 @@ namespace plugin {
         /// Идейно хост создает новое окно / отдает какое-то, абсолютно пустое, с единственным RT на все окно.
         /// @param size -- размер запрашиваемой области
         /// @param pos  -- (относительное [относительно предоставленной области]) смещение запрашиваемой области
-        virtual RenderTarget* getRenderTarget(Vec2 size, Vec2 pos, PLugin *self) = 0;
+        virtual RenderTargetI* getRenderTarget(Vec2 size, Vec2 pos, Plugin *self) = 0;
 
         /// @brief Создает окно с параметрами, каким-то образом узнает у пользователя 
         ///     значения параметров и потом возвращает их интерфейсу через Interface::set_params
@@ -54,16 +75,24 @@ namespace plugin {
         virtual void createParamWindow(Array<const char *> param_names, Interface * self) = 0;
 
         virtual WidgetI* getRoot();
-    }
+    };
+
+    enum class EventType {
+        MousePress,
+        MouseRelease,
+        MouseMove,
+        KeyPress,
+        KeyRelease
+    };
 
     struct EventManagerI {
         virtual void registerObject(EventProcessableI *object)   = 0;
 
         // 0 минимальный, ивенты приходят только объектам с их priority >= установленной по этому типу
-        /// @warning aka proposal: надо бы +- договориться о стандартных приоритетах, чтобы было понятно что выставлять
-        virtual void setPriority(EventType, uint8_t priority)   = 0;
+        // 0 -- default
+        virtual void setPriority(EventType, uint8_t priority)    = 0;
         virtual void unregisterObject(EventProcessableI *object) = 0;
-    }
+    };
 
     struct EventProcessableI {
         // MouseContext хранит в себе координаты относительно позиции RT из GuiI::getRenderTarget.
@@ -78,31 +107,137 @@ namespace plugin {
         virtual bool onMousePress(MouseContext context) = 0;
         virtual bool onKeyboardPress(KeyboardContext context) = 0;
         virtual bool onKeyboardRelease(KeyboardContext context) = 0;
-        virtual bool onClock(... context) = 0;
-    }
+
+        /// @brief clock event
+        /// @param context microseconds
+        virtual bool onClock(uint64_t delta) = 0;
+    };
 
     /// @note см про относительность координат
     struct MouseContext {
         Vec2 position;
         MouseButton button;
-    }
+    };
 
     enum class MouseButton {
         Left,
         Right
-    }
+    };
 
     enum class Key {
-        /* копипаст из SFML */
-    }
+        Unknown = -1, 
+        A = 0,        
+        B,            
+        C,            
+        D,            
+        E,            
+        F,            
+        G,            
+        H,            
+        I,            
+        J,            
+        K,            
+        L,            
+        M,            
+        N,            
+        O,            
+        P,            
+        Q,            
+        R,            
+        S,            
+        T,            
+        U,            
+        V,            
+        W,            
+        X,            
+        Y,            
+        Z,            
+        Num0,         
+        Num1,         
+        Num2,         
+        Num3,         
+        Num4,         
+        Num5,         
+        Num6,         
+        Num7,         
+        Num8,         
+        Num9,         
+        Escape,       
+        LControl,     
+        LShift,       
+        LAlt,         
+        LSystem,      
+        RControl,     
+        RShift,       
+        RAlt,         
+        RSystem,      
+        Menu,         
+        LBracket,     
+        RBracket,     
+        Semicolon,    
+        Comma,        
+        Period,       
+        Apostrophe,   
+        Slash,        
+        Backslash,    
+        Grave,        
+        Equal,        
+        Hyphen,       
+        Space,        
+        Enter,        
+        Backspace,    
+        Tab,          
+        PageUp,       
+        PageDown,     
+        End,          
+        Home,         
+        Insert,       
+        Delete,       
+        Add,          
+        Subtract,     
+        Multiply,     
+        Divide,       
+        Left,         
+        Right,        
+        Up,           
+        Down,         
+        Numpad0,      
+        Numpad1,      
+        Numpad2,      
+        Numpad3,      
+        Numpad4,      
+        Numpad5,      
+        Numpad6,      
+        Numpad7,      
+        Numpad8,      
+        Numpad9,      
+        F1,           
+        F2,           
+        F3,           
+        F4,           
+        F5,           
+        F6,           
+        F7,           
+        F8,           
+        F9,           
+        F10,          
+        F11,          
+        F12,          
+        F13,          
+        F14,          
+        F15,          
+        Pause,        
+        
+        KeyCount,     
+    };
 
     struct KeyboardContext {
         bool alt;
         bool shift;
         bool ctrl;
 
-        Key key; // Копипастим из SFML
-    }
+        Key key;
+    };
 
     struct WidgetI: public EventProcessableI {
         virtual void registerSubWidget(WidgetI* object);
@@ -134,16 +269,16 @@ namespace plugin {
         virtual void recalcRegion();
 
         virtual ~WidgetI();
-    }
+    };
 
     struct ToolI: public Interface {
-        const Image * getIcon();
+        const Texture * getIcon();
 
         virtual void paintOnPress(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color);
         virtual void paintOnRelease(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color);
         virtual void paintOnMove(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color);
         virtual void disable(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color);
-    }
+    };
 
     struct ToolManagerI {
         virtual void setColor(Color color);
@@ -156,69 +291,36 @@ namespace plugin {
         virtual void paintOnPress(RenderTargetI *data, RenderTargetI *tmp, MouseContext context);
         virtual void paintOnRelease(RenderTargetI *data, RenderTargetI *tmp, MouseContext context);
         virtual void disableTool(RenderTargetI *data, RenderTargetI *tmp, MouseContext context);
-    }
+    };
 
     struct FilterI: public Interface {
         virtual void apply(RenderTargetI *data);
-    }
+    };
 
     struct FilterManagerI {
         virtual void setRenderTarget(RenderTargetI *target);
         virtual void setFilter(FilterI *filter);
         virtual void applyFilter();
-    }
-
-    struct RenderTargetI {
-        /**
-         * point -- левый верхний угол
-         * size  -- размер ограничивающего прямоугольника
-         * */
-
-        virtual void setPixel(Vec2 pos, Color color);
-        virtual void drawLine(Vec2 pos, Vec2 point1, Color color);
-        virtual void drawRect(Vec2 pos, Vec2 size, Color color);
-        virtual void drawEllipse(Vec2 pos, Vec2 size, Color color);
-        virtual void drawTexture(Vec2 pos, Vec2 size, const Texture *texture);
-        virtual void drawText(Vec2 pos, const char *content, uint16_t char_size, Color color);
-
-        virtual Texture *getTexture();
-
-        /// как в RenderTexture::display
-        virtual void display();
-
-        /// clear
-        virtual void clear();
-    }
+    };
 
     struct Texture {
         uint64_t height;
         uint64_t width;
 
         Color *pixels;
-    }
+    };
 
     struct Color {
         uint8_t r;
         uint8_t g;
         uint8_t b;
         uint8_t a;
-    }
+    };
 
     struct Vec2 {
         double x;
         double y;
-    }
-
-    template<class T>
-    struct {
-        uint64_t size;
-        T* data;
-    }
+    };
 }
 
-```
-
-# Аксиоматика интерфейсов
-0. Авторы хост-программы и плагина не долбоебы
-1. В одном файле не более одного типа интерфейса. Либо Tool, либо Filter
-2. Все позиции отсчитываются от левого верхнего
+extern "C" plugin::Plugin* getInstance(plugin::App *app);
