@@ -12,116 +12,34 @@ namespace plugin {
         T* data;
     };
 
-    struct RenderTargetI {
-        /**
-         * point -- левый верхний угол
-         * size  -- размер ограничивающего прямоугольника
-         * */
-
-        virtual void setPixel(Vec2 pos, Color color);
-        virtual void drawLine(Vec2 pos, Vec2 point1, Color color);
-        virtual void drawRect(Vec2 pos, Vec2 size, Color color);
-        virtual void drawEllipse(Vec2 pos, Vec2 size, Color color);
-        virtual void drawTexture(Vec2 pos, Vec2 size, const Texture *texture);
-        virtual void drawText(Vec2 pos, const char *content, uint16_t char_size, Color color);
-
-        virtual Texture *getTexture();
-
-        /// как в RenderTexture::display
-        virtual void display();
-
-        /// clear
-        virtual void clear();
+    struct Color {
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+        uint8_t a;
     };
 
-    struct Interface {
-        Array<const char *> getParamNames();
-        
-        // в том же порядке, что getParamNames 
-        Array<double> getParams();
-        virtual void setParams(Array<double> params);
+    struct Texture {
+        uint64_t height;
+        uint64_t width;
+
+        Color *pixels;
     };
 
-    struct Plugin {
-        /* где-то тут лежит App*, но это дело автора плагина */
-        uint64_t id;
-        const char *name;
-        InterfaceType type;
-
-        virtual Interface *getInterface() = 0;
-        virtual ~Plugin() = 0;
+    struct Vec2 {
+        double x;
+        double y;
     };
 
-    struct App {
-        GuiI *root;
-        EventManagerI *event_manager; 
-        ToolManagerI *tool_manager;
-        FilterManagerI *filter_manager; 
-    };
-
-    struct GuiI {
-        Vec2 getSize(); // размер доступной для рисования площади (которую можно запросить)
-
-        /// @brief запросить RT.
-        /// Идейно хост создает новое окно / отдает какое-то, абсолютно пустое, с единственным RT на все окно.
-        /// @param size -- размер запрашиваемой области
-        /// @param pos  -- (относительное [относительно предоставленной области]) смещение запрашиваемой области
-        virtual RenderTargetI* getRenderTarget(Vec2 size, Vec2 pos, Plugin *self) = 0;
-
-        /// @brief Создает окно с параметрами, каким-то образом узнает у пользователя 
-        ///     значения параметров и потом возвращает их интерфейсу через Interface::set_params
-        /// @note окно не обязательно модальное, да и вообще implementation defined. Мем в том, что плагин находится в 
-        ///     неопределенном/дефолтном состоянии между createParamWindow и Interface::set_params и взаимодействие с ним UB
-        virtual void createParamWindow(Array<const char *> param_names, Interface * self) = 0;
-
-        virtual WidgetI* getRoot();
-    };
-
-    enum class EventType {
-        MousePress,
-        MouseRelease,
-        MouseMove,
-        KeyPress,
-        KeyRelease
-    };
-
-    struct EventManagerI {
-        virtual void registerObject(EventProcessableI *object)   = 0;
-
-        // 0 минимальный, ивенты приходят только объектам с их priority >= установленной по этому типу
-        // 0 -- default
-        virtual void setPriority(EventType, uint8_t priority)    = 0;
-        virtual void unregisterObject(EventProcessableI *object) = 0;
-    };
-
-    struct EventProcessableI {
-        // MouseContext хранит в себе координаты относительно позиции RT из GuiI::getRenderTarget.
-        // Мотивация: если RT это не весь экран, а RT в каком-то окне (как идейно и планировалось), то, 
-        // строго говоря, плагин не знает где в реальном мире находится RT (его могли перетаскивать и проч)
-        // и не может пересчитать их в локальные.
-        
-        /// @warning aka proposal: тогда вызов этих функций без предварительного вызова getRenderTarget UB.
-
-        virtual bool onMouseMove(MouseContext context) = 0;
-        virtual bool onMouseRelease(MouseContext context) = 0;
-        virtual bool onMousePress(MouseContext context) = 0;
-        virtual bool onKeyboardPress(KeyboardContext context) = 0;
-        virtual bool onKeyboardRelease(KeyboardContext context) = 0;
-
-        /// @brief clock event
-        /// @param context microseconds
-        virtual bool onClock(uint64_t delta) = 0;
+    enum class MouseButton {
+        Left,
+        Right
     };
 
     /// @note см про относительность координат
     struct MouseContext {
         Vec2 position;
         MouseButton button;
-    };
-
-    enum class MouseButton {
-        Left,
-        Right
     };
 
     enum class Key {
@@ -239,6 +157,82 @@ namespace plugin {
         Key key;
     };
 
+    struct RenderTargetI {
+        /**
+         * point -- левый верхний угол
+         * size  -- размер ограничивающего прямоугольника
+         * */
+
+        virtual void setPixel(Vec2 pos, Color color);
+        virtual void drawLine(Vec2 pos, Vec2 point1, Color color);
+        virtual void drawRect(Vec2 pos, Vec2 size, Color color);
+        virtual void drawEllipse(Vec2 pos, Vec2 size, Color color);
+        virtual void drawTexture(Vec2 pos, Vec2 size, const Texture *texture);
+        virtual void drawText(Vec2 pos, const char *content, uint16_t char_size, Color color);
+
+        virtual Texture *getTexture();
+
+        /// как в RenderTexture::display
+        virtual void display();
+
+        /// clear
+        virtual void clear();
+    };
+
+    struct Interface {
+        Array<const char *> getParamNames();
+        
+        // в том же порядке, что getParamNames 
+        Array<double> getParams();
+        virtual void setParams(Array<double> params);
+    };
+
+    struct Plugin {
+        /* где-то тут лежит App*, но это дело автора плагина */
+        uint64_t id;
+        const char *name;
+        InterfaceType type;
+
+        virtual Interface *getInterface() = 0;
+        virtual ~Plugin() = 0;
+    };
+
+    enum class EventType {
+        MousePress,
+        MouseRelease,
+        MouseMove,
+        KeyPress,
+        KeyRelease
+    };
+
+    struct EventProcessableI {
+        // MouseContext хранит в себе координаты относительно позиции RT из GuiI::getRenderTarget.
+        // Мотивация: если RT это не весь экран, а RT в каком-то окне (как идейно и планировалось), то, 
+        // строго говоря, плагин не знает где в реальном мире находится RT (его могли перетаскивать и проч)
+        // и не может пересчитать их в локальные.
+        
+        /// @warning aka proposal: тогда вызов этих функций без предварительного вызова getRenderTarget UB.
+
+        virtual bool onMouseMove(MouseContext context) = 0;
+        virtual bool onMouseRelease(MouseContext context) = 0;
+        virtual bool onMousePress(MouseContext context) = 0;
+        virtual bool onKeyboardPress(KeyboardContext context) = 0;
+        virtual bool onKeyboardRelease(KeyboardContext context) = 0;
+
+        /// @brief clock event
+        /// @param context microseconds
+        virtual bool onClock(uint64_t delta) = 0;
+    };
+
+    struct EventManagerI {
+        virtual void registerObject(EventProcessableI *object)   = 0;
+
+        // 0 минимальный, ивенты приходят только объектам с их priority >= установленной по этому типу
+        // 0 -- default
+        virtual void setPriority(EventType, uint8_t priority)    = 0;
+        virtual void unregisterObject(EventProcessableI *object) = 0;
+    };
+
     struct WidgetI: public EventProcessableI {
         virtual void registerSubWidget(WidgetI* object);
         virtual void unregisterSubWidget(WidgetI* object);
@@ -303,23 +297,29 @@ namespace plugin {
         virtual void applyFilter();
     };
 
-    struct Texture {
-        uint64_t height;
-        uint64_t width;
+    struct GuiI {
+        Vec2 getSize(); // размер доступной для рисования площади (которую можно запросить)
 
-        Color *pixels;
+        /// @brief запросить RT.
+        /// Идейно хост создает новое окно / отдает какое-то, абсолютно пустое, с единственным RT на все окно.
+        /// @param size -- размер запрашиваемой области
+        /// @param pos  -- (относительное [относительно предоставленной области]) смещение запрашиваемой области
+        virtual RenderTargetI* getRenderTarget(Vec2 size, Vec2 pos, Plugin *self) = 0;
+
+        /// @brief Создает окно с параметрами, каким-то образом узнает у пользователя 
+        ///     значения параметров и потом возвращает их интерфейсу через Interface::set_params
+        /// @note окно не обязательно модальное, да и вообще implementation defined. Мем в том, что плагин находится в 
+        ///     неопределенном/дефолтном состоянии между createParamWindow и Interface::set_params и взаимодействие с ним UB
+        virtual void createParamWindow(Array<const char *> param_names, Interface * self) = 0;
+
+        virtual WidgetI* getRoot();
     };
 
-    struct Color {
-        uint8_t r;
-        uint8_t g;
-        uint8_t b;
-        uint8_t a;
-    };
-
-    struct Vec2 {
-        double x;
-        double y;
+    struct App {
+        GuiI *root;
+        EventManagerI *event_manager; 
+        ToolManagerI *tool_manager;
+        FilterManagerI *filter_manager; 
     };
 }
 
