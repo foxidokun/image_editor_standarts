@@ -298,7 +298,7 @@ namespace plugin {
     };
 
     struct GuiI {
-        Vec2 getSize(); // размер доступной для рисования площади (которую можно запросить)
+        virtual Vec2 getSize() = 0; // размер доступной для рисования площади (которую можно запросить)
 
         /// @brief запросить RT.
         /// Хост создает новое окно / отдает какое-то, абсолютно пустое, с единственным RT на все окно.
@@ -312,6 +312,11 @@ namespace plugin {
         ///     неопределенном/дефолтном состоянии между createParamWindow и Interface::set_params и взаимодействие с ним UB
         virtual void createParamWindow(Array<const char *> param_names, Interface * self) = 0;
 
+        /**
+         * @brief Get the root widget of widget tree
+         * 
+         * @return WidgetI* root
+         */
         virtual WidgetI* getRoot();
     };
 
