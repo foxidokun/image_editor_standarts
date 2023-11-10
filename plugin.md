@@ -5,8 +5,6 @@
 ```c++
 // plugin.h
 
-/// @warning Все, кроме getInstance, было бы неплохо обернуть в namespace 
-
 extern "C" Plugin* getInstance(App *);
 
 namespace plugin {
@@ -16,9 +14,12 @@ namespace plugin {
         Filter
     };
 
-
     struct Interface {
-        /* TODO: установка параметров */
+        Array<const char *> getParamNames();
+        
+        // в том же порядке, что getParamNames 
+        Array<double> getParams();
+        virtual void setParams(Array<double> params);
     };
 
     struct Plugin {
@@ -29,14 +30,6 @@ namespace plugin {
 
         virtual Interface *getInstance() = 0;
         virtual ~Plugin() = 0;
-    }
-
-    struct Tool: public Interface {
-
-    }
-
-    struct Filter: public Interface {
-
     }
 
     struct App {
@@ -100,6 +93,10 @@ namespace plugin {
         Right
     }
 
+    enum class Key {
+        /* копипаст из SFML */
+    }
+
     struct KeyboardContext {
         bool alt;
         bool shift;
@@ -140,10 +137,84 @@ namespace plugin {
         virtual ~WidgetI();
     }
 
-    struct ToolI {
-        
+    struct ToolI: public Interface {
+        const Image * getIcon();
+
+        virtual void paintOnPress(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color);
+        virtual void paintOnRelease(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color);
+        virtual void paintOnMove(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color);
+        virtual void disable(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color);
     }
 
+    struct ToolManagerI {
+        virtual void setColor(Color color);
+        virtual void setTool(ToolI *tool);
+
+        virtual ToolI *getTool();
+        virtual Color  getColor();
+
+        virtual void paintOnMove(RenderTargetI *data, RenderTargetI *tmp, MouseContext context);
+        virtual void paintOnPress(RenderTargetI *data, RenderTargetI *tmp, MouseContext context);
+        virtual void paintOnRelease(RenderTargetI *data, RenderTargetI *tmp, MouseContext context);
+        virtual void disableTool(RenderTargetI *data, RenderTargetI *tmp, MouseContext context);
+    }
+
+    struct FilterI: public Interface {
+        virtual void apply(RenderTargetI *data);
+    }
+
+    struct FilterManagerI {
+        virtual void setRenderTarget(RenderTargetI *target);
+        virtual void setFilter(FilterI *filter);
+        virtual void applyFilter();
+    }
+
+    struct RenderTargetI {
+        /**
+         * point -- левый верхний угол
+         * size  -- размер ограничивающего прямоугольника
+         * */
+
+        virtual void setPixel(Vec2 pos, Color color);
+        virtual void drawLine(Vec2 pos, Vec2 point1, Color color);
+        virtual void drawRect(Vec2 pos, Vec2 size, Color color);
+        virtual void drawEllipse(Vec2 pos, Vec2 size, Color color);
+        virtual void drawTexture(Vec2 pos, Vec2 size, const Texture *texture);
+        virtual void drawText(Vec2 pos, const char *content, uint16_t char_size, Color color);
+
+        virtual Texture *getTexture();
+
+        /// как в RenderTexture::display
+        virtual void display();
+
+        /// clear
+        virtual void clear();
+    }
+
+    struct Texture {
+        uint64_t height;
+        uint64_t width;
+
+        Color *pixels;
+    }
+
+    struct Color {
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+        uint8_t a;
+    }
+
+    struct Vec2 {
+        double x;
+        double y;
+    }
+
+    template<class T>
+    struct {
+        uint64_t size;
+        T* data;
+    }
 }
 
 ```
@@ -151,3 +222,4 @@ namespace plugin {
 # Аксиоматика интерфейсов
 0. Авторы хост-программы и плагина не долбоебы
 1. В одном файле не более одного типа интерфейса. Либо Tool, либо Filter
+2. Все позиции отсчитываются от левого верхнего
