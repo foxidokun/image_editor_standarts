@@ -38,8 +38,8 @@ namespace plugin {
 
     /// @note см про относительность координат
     struct MouseContext {
-        Vec2 position;
-        MouseButton button;
+        Vec2 position = 0;
+        MouseButton button = 0;
     };
 
     enum class Key {
@@ -163,28 +163,28 @@ namespace plugin {
          * size  -- размер ограничивающего прямоугольника
          * */
 
-        virtual void setPixel(Vec2 pos, Color color);
-        virtual void drawLine(Vec2 pos, Vec2 point1, Color color);
-        virtual void drawRect(Vec2 pos, Vec2 size, Color color);
-        virtual void drawEllipse(Vec2 pos, Vec2 size, Color color);
-        virtual void drawTexture(Vec2 pos, Vec2 size, const Texture *texture);
-        virtual void drawText(Vec2 pos, const char *content, uint16_t char_size, Color color);
+        virtual void setPixel(Vec2 pos, Color color) = 0;
+        virtual void drawLine(Vec2 pos, Vec2 point1, Color color) = 0;
+        virtual void drawRect(Vec2 pos, Vec2 size, Color color) = 0;
+        virtual void drawEllipse(Vec2 pos, Vec2 size, Color color) = 0;
+        virtual void drawTexture(Vec2 pos, Vec2 size, const Texture *texture) = 0;
+        virtual void drawText(Vec2 pos, const char *content, uint16_t char_size, Color color) = 0;
 
-        virtual Texture *getTexture();
+        virtual Texture *getTexture() = 0;
 
         /// как в RenderTexture::display
-        virtual void display();
+        virtual void display() = 0;
 
         /// clear
-        virtual void clear();
+        virtual void clear() = 0;
     };
 
     struct Interface {
-        Array<const char *> getParamNames();
+        virtual Array<const char *> getParamNames() = 0;
         
         // в том же порядке, что getParamNames 
-        Array<double> getParams();
-        virtual void setParams(Array<double> params);
+        virtual Array<double> getParams() = 0;
+        virtual void setParams(Array<double> params) = 0;
     };
 
     struct Plugin {
@@ -234,74 +234,74 @@ namespace plugin {
     };
 
     struct WidgetI: public EventProcessableI {
-        virtual void registerSubWidget(WidgetI* object);
-        virtual void unregisterSubWidget(WidgetI* object);
+        virtual void registerSubWidget(WidgetI* object) = 0;
+        virtual void unregisterSubWidget(WidgetI* object) = 0;
 
-        virtual Vec2 getSize();
-        virtual void setSize(Vec2);
+        virtual Vec2 getSize() = 0;
+        virtual void setSize(Vec2) = 0;
 
-        virtual Vec2 getPos();
-        virtual void setPos(Vec2);
+        virtual Vec2 getPos() = 0;
+        virtual void setPos(Vec2) = 0;
 
         /// Нужно для обновления регинов.
         /// верно тогда и только тогда, когда виджет принадлежит плагину.
         /// В таком случае вызов getDefaultRegion невалиден (поэтому тут его и нет), и нужно 
-        virtual bool isExtern();
+        virtual bool isExtern() = 0;
 
-        virtual void setParent(WidgetI *root);
-        virtual WidgetI *getParent();
+        virtual void setParent(WidgetI *root) = 0;
+        virtual WidgetI *getParent() = 0;
 
-        virtual void move(Vec2 shift);
+        virtual void move(Vec2 shift) = 0;
 
         // Жив ли виджет
         // Если true, то это идейно равносильно вызову деструктору, то есть его не надо рендерить, ему не надо передавать 
         // ивенты и тд и тп
-        virtual bool getAvailable();
-        virtual bool setAvailable();
+        virtual bool getAvailable() = 0;
+        virtual bool setAvailable() = 0;
 
-        virtual void render(RenderTargetI* );
-        virtual void recalcRegion();
+        virtual void render(RenderTargetI* ) = 0;
+        virtual void recalcRegion() = 0;
 
-        virtual ~WidgetI();
+        virtual ~WidgetI() = 0;
     };
 
     struct ToolI: public Interface {
-        const Texture * getIcon();
+        virtual const Texture *getIcon() = 0;
 
-        virtual void paintOnPress(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color);
-        virtual void paintOnRelease(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color);
-        virtual void paintOnMove(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color);
-        virtual void disable(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color);
+        virtual void paintOnPress(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color) = 0;
+        virtual void paintOnRelease(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color) = 0;
+        virtual void paintOnMove(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color) = 0;
+        virtual void disable(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color) = 0;
     };
 
     struct ToolManagerI {
-        virtual void setColor(Color color);
-        virtual void setTool(ToolI *tool);
+        virtual void setColor(Color color) = 0;
+        virtual void setTool(ToolI *tool) = 0;
 
-        virtual ToolI *getTool();
-        virtual Color  getColor();
+        virtual ToolI *getTool() = 0;
+        virtual Color  getColor() = 0;
 
-        virtual void paintOnMove(RenderTargetI *data, RenderTargetI *tmp, MouseContext context);
-        virtual void paintOnPress(RenderTargetI *data, RenderTargetI *tmp, MouseContext context);
-        virtual void paintOnRelease(RenderTargetI *data, RenderTargetI *tmp, MouseContext context);
-        virtual void disableTool(RenderTargetI *data, RenderTargetI *tmp, MouseContext context);
+        virtual void paintOnMove(RenderTargetI *data, RenderTargetI *tmp, MouseContext context) = 0;
+        virtual void paintOnPress(RenderTargetI *data, RenderTargetI *tmp, MouseContext context) = 0;
+        virtual void paintOnRelease(RenderTargetI *data, RenderTargetI *tmp, MouseContext context) = 0;
+        virtual void disableTool(RenderTargetI *data, RenderTargetI *tmp, MouseContext context) = 0;
     };
 
     struct FilterI: public Interface {
-        virtual void apply(RenderTargetI *data);
+        virtual void apply(RenderTargetI *data) = 0;
     };
 
     struct FilterManagerI {
-        virtual void setRenderTarget(RenderTargetI *target);
-        virtual void setFilter(FilterI *filter);
-        virtual void applyFilter();
+        virtual void setRenderTarget(RenderTargetI *target) = 0;
+        virtual void setFilter(FilterI *filter) = 0;
+        virtual void applyFilter() = 0;
     };
 
     struct GuiI {
         Vec2 getSize(); // размер доступной для рисования площади (которую можно запросить)
 
         /// @brief запросить RT.
-        /// Идейно хост создает новое окно / отдает какое-то, абсолютно пустое, с единственным RT на все окно.
+        /// Хост создает новое окно / отдает какое-то, абсолютно пустое, с единственным RT на все окно.
         /// @param size -- размер запрашиваемой области
         /// @param pos  -- (относительное [относительно предоставленной области]) смещение запрашиваемой области
         virtual RenderTargetI* getRenderTarget(Vec2 size, Vec2 pos, Plugin *self) = 0;
