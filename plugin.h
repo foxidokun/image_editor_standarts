@@ -48,7 +48,7 @@ namespace plugin {
         const char *name;
         InterfaceType type;
 
-        virtual Interface *getInstance() = 0;
+        virtual Interface *getInterface() = 0;
         virtual ~Plugin() = 0;
     };
 
