@@ -211,8 +211,7 @@ namespace plugin {
         // строго говоря, плагин не знает где в реальном мире находится RT (его могли перетаскивать и проч)
         // и не может пересчитать их в локальные.
         
-        /// @warning aka proposal: тогда вызов этих функций без предварительного вызова getRenderTarget UB.
-
+	// true = перехватил, false = надо продолжать
         virtual bool onMouseMove(MouseContext context) = 0;
         virtual bool onMouseRelease(MouseContext context) = 0;
         virtual bool onMousePress(MouseContext context) = 0;
