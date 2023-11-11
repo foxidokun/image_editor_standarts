@@ -165,7 +165,7 @@ namespace plugin {
          * */
 
         virtual void setPixel(Vec2 pos, Color color) = 0;
-        virtual void drawLine(Vec2 pos, Vec2 point1, Color color) = 0;
+        virtual void drawLine(Vec2 point1, Vec2 point2, Color color) = 0;
         virtual void drawRect(Vec2 pos, Vec2 size, Color color) = 0;
         virtual void drawEllipse(Vec2 pos, Vec2 size, Color color) = 0;
         virtual void drawTexture(Vec2 pos, Vec2 size, const Texture *texture) = 0;
@@ -226,7 +226,7 @@ namespace plugin {
         virtual bool onClock(uint64_t delta) = 0;
 
 
-	virtual uint8_t getPriority();
+	virtual uint8_t getPriority() = 0;
     };
 
     struct EventManagerI {
