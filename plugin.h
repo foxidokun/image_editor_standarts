@@ -38,8 +38,8 @@ namespace plugin {
 
     /// @note см про относительность координат
     struct MouseContext {
-        Vec2 position = 0;
-        MouseButton button = 0;
+        Vec2 position;
+        MouseButton button;
     };
 
     enum class Key {
