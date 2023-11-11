@@ -6,6 +6,7 @@ namespace plugin {
         Filter
     };
 
+/// @warning Array не владеющая структура => он не должен аллоцировать память. Даже в случае getPramas() надо возвращать указатель на какой-то внутренний массив даблов, а не аллоцировать, так как будет memory leak
     template<class T>
     struct Array {
         uint64_t size;
