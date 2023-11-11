@@ -202,7 +202,9 @@ namespace plugin {
         MouseRelease,
         MouseMove,
         KeyPress,
-        KeyRelease
+        KeyRelease,
+	Clock,
+	NumOfEvents
     };
 
     struct EventProcessableI {
