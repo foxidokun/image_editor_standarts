@@ -222,6 +222,9 @@ namespace plugin {
         /// @brief clock event
         /// @param context microseconds
         virtual bool onClock(uint64_t delta) = 0;
+
+
+	virtual uint8_t getPriority();
     };
 
     struct EventManagerI {
