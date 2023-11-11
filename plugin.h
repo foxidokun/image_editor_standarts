@@ -257,7 +257,7 @@ namespace plugin {
         // Если true, то это идейно равносильно вызову деструктору, то есть его не надо рендерить, ему не надо передавать 
         // ивенты и тд и тп
         virtual bool getAvailable() = 0;
-        virtual bool setAvailable() = 0;
+        virtual void setAvailable(bool) = 0;
 
         virtual void render(RenderTargetI* ) = 0;
         virtual void recalcRegion() = 0;
