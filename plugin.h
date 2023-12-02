@@ -1,16 +1,28 @@
 #include <cinttypes>
 
+/*
+    Запрещаем плагину иметь свои Widget и RenderTargetI
+
+    для виджетов есть createWidget
+    для RenderTargetI есть угол чтобы поплакать
+*/
+
 namespace plugin {
     enum class InterfaceType {
         Tool,
-        Filter
+        Filter,
+        System // системный плагин, мб обертка
     };
 
-/// @warning Array не владеющая структура => он не должен аллоцировать память. Даже в случае getPramas() надо возвращать указатель на какой-то внутренний массив даблов, а не аллоцировать, так как будет memory leak
+/// @warning [UPD] Array владеющая структура
     template<class T>
     struct Array {
         uint64_t size;
         T* data;
+
+        ~Array() {
+            delete[] data;
+        }
     };
 
     struct Color {
@@ -25,6 +37,8 @@ namespace plugin {
         uint64_t width;
 
         Color *pixels;
+
+        virtual ~Texture() = default;
     };
 
     struct Vec2 {
@@ -34,7 +48,8 @@ namespace plugin {
 
     enum class MouseButton {
         Left,
-        Right
+        Right,
+        Unknown
     };
 
     /// @note см про относительность координат
@@ -171,7 +186,9 @@ namespace plugin {
         virtual void drawTexture(Vec2 pos, Vec2 size, const Texture *texture) = 0;
         virtual void drawText(Vec2 pos, const char *content, uint16_t char_size, Color color) = 0;
 
-        virtual Texture *getTexture() = 0;
+        // Возвращает аллоцированную структуру типа Texture* 
+        virtual Texture *getTexture() const = 0;
+        virtual void setTexture(Texture *) = 0;
 
         /// как в RenderTexture::display
         virtual void display() = 0;
@@ -180,12 +197,23 @@ namespace plugin {
         virtual void clear() = 0;
     };
 
+    struct RenderableI {
+        virtual void render(RenderTargetI* texture);
+        virtual ~RenderableI() = default;
+    };
+
+    struct PluginWidgetI: public EventProcessableI, public RenderableI {
+        WidgetI* host;
+    };
+
     struct Interface {
-        virtual Array<const char *> getParamNames() = 0;
+        virtual Array<const char *> getParamNames() const = 0;
         
         // в том же порядке, что getParamNames 
-        virtual Array<double> getParams() = 0;
+        virtual Array<double> getParams() const = 0;
         virtual void setParams(Array<double> params) = 0;
+
+        virtual ~Interface() = default;
     };
 
     struct Plugin {
@@ -194,8 +222,12 @@ namespace plugin {
         const char *name;
         InterfaceType type;
 
-        virtual Interface *getInterface() = 0;
-        virtual ~Plugin() = 0;
+        virtual Interface *getInterface() const = 0;
+
+        // плагин выбрали (недо apply)
+        virtual void selectPlugin() = 0;
+
+        virtual ~Plugin() = default;
     };
 
     enum class EventType {
@@ -204,8 +236,8 @@ namespace plugin {
         MouseMove,
         KeyPress,
         KeyRelease,
-	Clock,
-	NumOfEvents
+	    Clock,
+	    NumOfEvents
     };
 
     struct EventProcessableI {
@@ -214,7 +246,7 @@ namespace plugin {
         // строго говоря, плагин не знает где в реальном мире находится RT (его могли перетаскивать и проч)
         // и не может пересчитать их в локальные.
         
-	// true = перехватил, false = надо продолжать
+	    // true = перехватил, false = надо продолжать
         virtual bool onMouseMove(MouseContext context) = 0;
         virtual bool onMouseRelease(MouseContext context) = 0;
         virtual bool onMousePress(MouseContext context) = 0;
@@ -225,8 +257,9 @@ namespace plugin {
         /// @param context microseconds
         virtual bool onClock(uint64_t delta) = 0;
 
+	    virtual uint8_t getPriority() const = 0;
 
-	virtual uint8_t getPriority() = 0;
+        virtual ~EventProcessableI() = default;
     };
 
     struct EventManagerI {
@@ -236,100 +269,78 @@ namespace plugin {
         // 0 -- default
         virtual void setPriority(EventType, uint8_t priority)    = 0;
         virtual void unregisterObject(EventProcessableI *object) = 0;
+
+        virtual ~EventManagerI() = default;
     };
 
-    struct WidgetI: public EventProcessableI {
+    struct WidgetI {
         virtual void registerSubWidget(WidgetI* object) = 0;
         virtual void unregisterSubWidget(WidgetI* object) = 0;
 
-        virtual Vec2 getSize() = 0;
+        virtual Vec2 getSize() const = 0;
         virtual void setSize(Vec2) = 0;
 
-        virtual Vec2 getPos() = 0;
+        virtual Vec2 getPos() const = 0;
         virtual void setPos(Vec2) = 0;
 
-        /// Нужно для обновления регинов.
-        /// верно тогда и только тогда, когда виджет принадлежит плагину.
-        /// В таком случае вызов getDefaultRegion невалиден (поэтому тут его и нет), и нужно 
-        virtual bool isExtern() = 0;
-
+        virtual WidgetI *getParent() const = 0;
         virtual void setParent(WidgetI *root) = 0;
-        virtual WidgetI *getParent() = 0;
 
         virtual void move(Vec2 shift) = 0;
 
         // Жив ли виджет
         // Если true, то это идейно равносильно вызову деструктору, то есть его не надо рендерить, ему не надо передавать 
         // ивенты и тд и тп
-        virtual bool getAvailable() = 0;
+        virtual bool getAvailable() const = 0;
         virtual void setAvailable(bool) = 0;
 
-        virtual void render(RenderTargetI* ) = 0;
-        virtual void recalcRegion() = 0;
-
-        virtual ~WidgetI() = 0;
+        virtual ~WidgetI() = default;
     };
 
     struct ToolI: public Interface {
-        virtual const Texture *getIcon() = 0;
+        virtual const Texture *getIcon() const = 0;
 
         virtual void paintOnPress(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color) = 0;
         virtual void paintOnRelease(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color) = 0;
         virtual void paintOnMove(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color) = 0;
         virtual void disable(RenderTargetI *data, RenderTargetI *tmp, MouseContext context, Color color) = 0;
-    };
 
-    struct ToolManagerI {
-        virtual void setColor(Color color) = 0;
-        virtual void setTool(ToolI *tool) = 0;
-
-        virtual ToolI *getTool() = 0;
-        virtual Color  getColor() = 0;
-
-        virtual void paintOnMove(RenderTargetI *data, RenderTargetI *tmp, MouseContext context) = 0;
-        virtual void paintOnPress(RenderTargetI *data, RenderTargetI *tmp, MouseContext context) = 0;
-        virtual void paintOnRelease(RenderTargetI *data, RenderTargetI *tmp, MouseContext context) = 0;
-        virtual void disableTool(RenderTargetI *data, RenderTargetI *tmp, MouseContext context) = 0;
+        virtual ~ToolI() = default;
     };
 
     struct FilterI: public Interface {
         virtual void apply(RenderTargetI *data) = 0;
-    };
 
-    struct FilterManagerI {
-        virtual void setRenderTarget(RenderTargetI *target) = 0;
-        virtual void setFilter(FilterI *filter) = 0;
-        virtual void applyFilter() = 0;
+        virtual ~FilterI() = default;
     };
 
     struct GuiI {
-        virtual Vec2 getSize() = 0; // размер доступной для рисования площади (которую можно запросить)
-
-        /// @brief запросить RT.
-        /// Хост создает новое окно / отдает какое-то, абсолютно пустое, с единственным RT на все окно.
-        /// @param size -- размер запрашиваемой области
-        /// @param pos  -- (относительное [относительно предоставленной области]) смещение запрашиваемой области
-        virtual RenderTargetI* getRenderTarget(Vec2 size, Vec2 pos, Plugin *self) = 0;
-
-        /// @brief Создает окно с параметрами, каким-то образом узнает у пользователя 
-        ///     значения параметров и потом возвращает их интерфейсу через Interface::set_params
-        /// @note окно не обязательно модальное, да и вообще implementation defined. Мем в том, что плагин находится в 
-        ///     неопределенном/дефолтном состоянии между createParamWindow и Interface::set_params и взаимодействие с ним UB
-        virtual void createParamWindow(Array<const char *> param_names, Interface * self) = 0;
-
         /**
          * @brief Get the root widget of widget tree
          * 
          * @return WidgetI* root
          */
-        virtual WidgetI* getRoot();
+        virtual WidgetI* getRoot() const = 0;
+
+        /**
+         * @brief Create a host WidgetI from PluginWidgetI and set `host` field in widget
+         */
+        virtual void createWidgetI(PluginWidgetI* widget) = 0;
+
+        // плагин через это у хоста запрашивает, есть ли плагин c таким id. nullptr если нет
+        virtual Plugin *queryPlugin(uint64_t id) = 0;
+
+        // принимает имя файла
+        // например, если у хоста все asset'ы этого плагина валяются в assets/shit/<filename>, то 
+        // сюда надо передавать только filename
+        virtual Texture *loadTextureFromFile(const char *filename) = 0;
+
+        virtual ~GuiI() = default;
     };
 
     struct App {
         GuiI *root;
-        EventManagerI *event_manager; 
-        ToolManagerI *tool_manager;
-        FilterManagerI *filter_manager; 
+        EventManagerI *event_manager;
     };
 }
 
