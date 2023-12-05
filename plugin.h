@@ -38,7 +38,9 @@ namespace plugin {
 
         Color *pixels;
 
-        virtual ~Texture() = default;
+        virtual ~Texture() {
+		delete pixels;
+	};
     };
 
     struct Vec2 {
