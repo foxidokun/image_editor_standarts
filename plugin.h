@@ -39,7 +39,7 @@ namespace plugin {
         Color *pixels;
 
         virtual ~Texture() {
-		delete pixels;
+		delete[] pixels;
 	};
     };
 
