@@ -197,6 +197,7 @@ namespace plugin {
 
         /// clear
         virtual void clear() = 0;
+        virtual void clear(Color color) = 0;
     };
 
     struct RenderableI {
@@ -222,7 +223,8 @@ namespace plugin {
 
         virtual Interface *getInterface() const = 0;
 
-        // плагин выбрали (недо apply)
+        // плагин выбрали
+        // [UPD]: только для системных
         virtual void selectPlugin() = 0;
 
         virtual ~Plugin() = default;
