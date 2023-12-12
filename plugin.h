@@ -32,6 +32,8 @@ namespace plugin {
             delete data;
             data = new T[other.size];
             std::copy(other.data, other.data + other.size, data);
+
+	    return *this;
         }
 
         Array(Array<T>&& other) {
@@ -42,6 +44,8 @@ namespace plugin {
         Array& operator=(Array<T>&& other) {
             std::swap(size, other.size);
             std::swap(data, other.data);
+
+	    return *this;
         }
 
         ~Array() {
