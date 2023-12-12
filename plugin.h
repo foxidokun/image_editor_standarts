@@ -225,7 +225,7 @@ namespace plugin {
     };
 
     struct RenderableI {
-        virtual void render(RenderTargetI* texture);
+        virtual void render(RenderTargetI* texture) = 0;
         virtual ~RenderableI() = default;
     };
 
